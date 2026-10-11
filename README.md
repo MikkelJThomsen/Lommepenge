@@ -1,8 +1,10 @@
-# Lommepenge
+# Lommepenge 2.1
 
-Familie-app til opgaver, lommepenge, godkendelser, køb/udbetalinger og historik.
-
-## GitHub Pages
-Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
-
-Appen bruger Supabase Auth og projektets publishable key. Der ligger ingen secret/service-role key i frontend.
+Færdig testversion med:
+- bundnavigation: Hjem, Opgaver, +, Historik, Profil
+- forældrebeskyttet + knap
+- profilbilledupload til Supabase Storage
+- profilbilleder på familiekort
+- ikonvælger ved oprettelse og redigering af opgaver
+- permanent lagring af opgaveikoner
+- eksisterende godkendelse, historik, køb/udbetaling og "ikke lavet"
