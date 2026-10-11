@@ -140,3 +140,22 @@ main{
   .topProfile,.topProfileAvatar{width:44px;height:44px}
   .bottom.bottom3{padding-left:18px;padding-right:18px}
 }
+
+
+/* ===== Plus-knap finjustering ===== */
+.bottom.bottom3 .plus{
+  width:64px;
+  height:64px;
+  min-width:64px;
+  min-height:64px;
+  padding:0;
+  margin:-28px auto 0;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:42px;
+  font-weight:400;
+  line-height:1;
+  text-align:center;
+}
