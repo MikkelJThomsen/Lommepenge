@@ -1,8 +1,5 @@
-# Lommepenge
+# Lommepenge 2.0
 
-Familie-app til opgaver, lommepenge, godkendelser, køb/udbetalinger og historik.
+Mørkeblåt premium-design med opgaver, "ikke lavet", redigering før udførelse og filtreret historik.
 
-## GitHub Pages
-Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
-
-Appen bruger Supabase Auth og projektets publishable key. Der ligger ingen secret/service-role key i frontend.
+Bruger samme Supabase-projekt og Auth som v1.0. Frontend indeholder kun publishable key.

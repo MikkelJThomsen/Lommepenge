@@ -1,90 +1,24 @@
-const SUPABASE_URL = "https://hnowbhfopmvroabicfro.supabase.co";
-const SUPABASE_KEY = "sb_publishable_p06dNyqgbCai4JQ5ZSdtsg_i-YJzsaE";
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let me=null, people=[], tasks=[], completions=[], transactions=[];
-const $=id=>document.getElementById(id);
-const money=n=>new Intl.NumberFormat("da-DK",{style:"currency",currency:"DKK"}).format(Number(n||0));
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const person=id=>people.find(p=>p.id===id)?.navn||"";
-const isParent=()=>me?.rolle==="forælder";
-
-async function rpc(name,args={}){const {data,error}=await db.rpc(name,args);if(error)throw error;return data}
-function message(e){alert(e?.message||String(e))}
-async function pin(){return new Promise(resolve=>{const d=$("pinDialog"),i=$("pinInput");i.value="";d.showModal();d.addEventListener("close",()=>resolve(d.returnValue==="default"?i.value:null),{once:true});setTimeout(()=>i.focus(),50)})}
-
-async function boot(){
-  const {data:{session}}=await db.auth.getSession();
-  if(!session){showLogin();return}
-  try{
-    const p=await rpc("min_person");
-    me=Array.isArray(p)?p[0]:p;
-    if(!me) throw new Error("Denne login-bruger er ikke koblet til familien.");
-    people=await rpc("hent_familie");
-    $("who").textContent=`Logget ind som ${me.navn}`;
-    $("login").classList.add("hidden");$("app").classList.remove("hidden");$("logout").classList.remove("hidden");
-    $("parentTab").classList.toggle("hidden",!isParent());
-    await refresh();
-  }catch(e){message(e);await db.auth.signOut();showLogin()}
-}
-function showLogin(){$("login").classList.remove("hidden");$("app").classList.add("hidden");$("logout").classList.add("hidden");$("who").textContent="Familien"}
-
-async function refresh(){
-  const [t,c,x]=await Promise.all([
-    db.from("opgaver").select("*").order("created_at",{ascending:false}),
-    db.from("udfoerte_opgaver").select("*").order("udfoert_at",{ascending:false}),
-    db.from("transaktioner").select("*").order("created_at",{ascending:false})
-  ]);
-  for(const r of [t,c,x]) if(r.error) throw r.error;
-  tasks=t.data||[];completions=c.data||[];transactions=x.data||[];
-  renderBalances();renderTasks();renderHistory();renderPending();
-}
-
-function renderBalances(){
-  for(const n of ["Julius","Rosa"]){
-    const p=people.find(x=>x.navn===n);
-    const sum=transactions.filter(x=>x.barn_id===p?.id).reduce((a,x)=>a+Number(x.beloeb),0);
-    $(n==="Julius"?"saldoJ":"saldoR").textContent=money(sum);
-  }
-}
-function available(task){
-  if(isParent()) return true;
-  const n=me.navn.toLowerCase();
-  if(!(task.tildelt_til===n||task.tildelt_til==="begge"))return false;
-  const relevant=completions.filter(c=>c.opgave_id===task.id&&["pending","godkendt"].includes(c.status));
-  const now=new Date(), local=d=>new Date(d).toLocaleDateString("da-DK",{timeZone:"Europe/Copenhagen"});
-  if(task.gentagelse==="engang") return relevant.length===0;
-  if(task.gentagelse==="daglig") return !relevant.some(c=>local(c.udfoert_at)===local(now));
-  if(task.gentagelse==="ugentlig"){
-    const week=d=>{let x=new Date(new Date(d).toLocaleString("en-US",{timeZone:"Europe/Copenhagen"}));x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.toISOString().slice(0,10)};
-    return !relevant.some(c=>week(c.udfoert_at)===week(now));
-  }
-  return false;
-}
-function renderTasks(){
-  let list=tasks.filter(t=>t.aktiv).filter(t=>isParent()||t.tildelt_til===me.navn.toLowerCase()||t.tildelt_til==="begge");
-  $("taskList").innerHTML=list.length?list.map(t=>{
-    const can=available(t), pending=completions.some(c=>c.opgave_id===t.id&&c.status==="pending");
-    return `<div class="item"><div class="itemHead"><div><strong>${esc(t.titel)}</strong><div class="muted">${esc(t.beskrivelse||"")} · ${t.gentagelse}</div></div><span class="amount">${money(t.beloeb)}</span></div>
-    ${!isParent()?`<div class="actions"><button ${can?"":"disabled"} onclick="doneTask('${t.id}')">${pending?"Afventer godkendelse":can?"Jeg har gjort det":"Allerede udført"}</button></div>`:""}</div>`}).join(""):`<div class="empty">Ingen aktive opgaver lige nu.</div>`;
-}
-function renderHistory(){
-  $("historyList").innerHTML=transactions.length?transactions.map(t=>`<div class="item"><div class="itemHead"><div><strong>${esc(t.beskrivelse)}</strong><div class="muted">${person(t.barn_id)} · ${new Date(t.created_at).toLocaleDateString("da-DK")}</div></div><span class="amount ${Number(t.beloeb)>=0?"positive":"negative"}">${money(t.beloeb)}</span></div></div>`).join(""):`<div class="empty">Ingen posteringer endnu.</div>`;
-}
-function renderPending(){
-  if(!isParent())return;
-  const list=completions.filter(c=>c.status==="pending");
-  $("pendingList").innerHTML=list.length?list.map(c=>{const t=tasks.find(x=>x.id===c.opgave_id);return `<div class="item"><div class="itemHead"><div><strong>${esc(t?.titel||"Opgave")}</strong><div class="muted">${person(c.barn_id)} · ${new Date(c.udfoert_at).toLocaleString("da-DK")}</div></div><span class="amount">${money(t?.beloeb)}</span></div><div class="actions"><button class="danger" onclick="review('${c.id}',false)">Afvis</button><button onclick="review('${c.id}',true)">Godkend</button></div></div>`}).join(""):`<div class="empty">Intet venter på godkendelse.</div>`;
-}
-
-window.doneTask=async id=>{try{await rpc("marker_udfoert",{opgave_uuid:id});await refresh()}catch(e){message(e)}}
-window.review=async(id,approve)=>{const p=await pin();if(!p)return;try{await rpc(approve?"godkend_opgave":"afvis_opgave",{udfoert_uuid:id,foraelder_navn:me.navn,pin:p});await refresh()}catch(e){message(e)}}
-
-$("loginBtn").onclick=async()=>{try{$("loginMsg").textContent="Logger ind…";const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)throw error;$("loginMsg").textContent="";await boot()}catch(e){$("loginMsg").textContent=e.message}}
-$("logout").onclick=async()=>{await db.auth.signOut();me=null;showLogin()}
-$("createTask").onclick=async()=>{const p=await pin();if(!p)return;try{await rpc("opret_opgave",{foraelder_navn:me.navn,pin:p,titel:$("newTitle").value.trim(),beskrivelse:$("newDesc").value.trim(),beloeb:Number($("newAmount").value),tildelt_til:$("newAssignee").value,gentagelse:$("newRepeat").value});$("newTitle").value="";$("newDesc").value="";$("newAmount").value="";await refresh()}catch(e){message(e)}}
-$("deductBtn").onclick=async()=>{const p=await pin();if(!p)return;try{await rpc("registrer_fradrag",{barn_navn:$("deductChild").value,beloeb:Number($("deductAmount").value),type:$("deductType").value,beskrivelse:$("deductDesc").value.trim(),foraelder_navn:me.navn,pin:p});$("deductAmount").value="";$("deductDesc").value="";await refresh()}catch(e){message(e)}}
-document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));$(b.dataset.tab).classList.remove("hidden")});
-db.auth.onAuthStateChange(()=>{});
-if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
-boot();
+const URL="https://hnowbhfopmvroabicfro.supabase.co",KEY="sb_publishable_p06dNyqgbCai4JQ5ZSdtsg_i-YJzsaE",db=supabase.createClient(URL,KEY);
+let me,people=[],tasks=[],done=[],tx=[],events=[],filter="Alle";const $=x=>document.getElementById(x),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),money=n=>new Intl.NumberFormat("da-DK",{style:"currency",currency:"DKK"}).format(Number(n||0)),person=id=>people.find(p=>p.id===id)?.navn||"",parent=()=>me?.rolle==="forælder",date=d=>new Date(d).toLocaleDateString("sv-SE",{timeZone:"Europe/Copenhagen"});
+function monday(d){let x=new Date(new Date(d).toLocaleString("en-US",{timeZone:"Europe/Copenhagen"}));x.setHours(12,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.toISOString().slice(0,10)}
+function pk(t){return t.gentagelse==="daglig"?date(new Date()):t.gentagelse==="ugentlig"?monday(new Date()):date(t.created_at)}
+function closed(t){return events.some(e=>e.opgave_id===t.id&&e.type==="ikke_lavet"&&e.periode_start===pk(t))}
+function completed(t){return done.some(c=>c.opgave_id===t.id&&["pending","godkendt"].includes(c.status)&&(t.gentagelse==="engang"||t.gentagelse==="daglig"&&date(c.udfoert_at)===pk(t)||t.gentagelse==="ugentlig"&&monday(c.udfoert_at)===pk(t)))}
+async function rpc(n,a={}){let{data,error}=await db.rpc(n,a);if(error)throw error;return data}function error(e){alert(e.message||e)}
+async function pin(){return new Promise(r=>{let d=$("pinDialog"),i=$("pinInput");i.value="";d.showModal();d.addEventListener("close",()=>r(d.returnValue==="ok"?i.value:null),{once:true})})}
+async function boot(){let{data:{session}}=await db.auth.getSession();if(!session)return showLogin();try{let p=await rpc("min_person");me=Array.isArray(p)?p[0]:p;people=await rpc("hent_familie");if(!me)throw Error("Brugeren er ikke koblet til familien.");$("name").textContent=me.navn;$("login").classList.add("hidden");$("app").classList.remove("hidden");$("parentTab").classList.toggle("hidden",!parent());await refresh()}catch(e){error(e);await db.auth.signOut();showLogin()}}
+function showLogin(){$("login").classList.remove("hidden");$("app").classList.add("hidden")}
+async function refresh(){let a=await Promise.all([db.from("opgaver").select("*").order("created_at",{ascending:false}),db.from("udfoerte_opgaver").select("*").order("udfoert_at",{ascending:false}),db.from("transaktioner").select("*").order("created_at",{ascending:false}),db.from("opgave_haendelser").select("*").order("created_at",{ascending:false})]);for(let r of a)if(r.error)throw r.error;[tasks,done,tx,events]=a.map(r=>r.data||[]);render()}
+function activeFor(t,n){return t.aktiv&&!closed(t)&&!completed(t)&&(t.tildelt_til==="begge"||t.tildelt_til===n.toLowerCase())}
+function render(){for(let n of ["Julius","Rosa"]){let p=people.find(x=>x.navn===n),s=tx.filter(x=>x.barn_id===p?.id).reduce((a,x)=>a+Number(x.beloeb),0);$(n==="Julius"?"saldoJ":"saldoR").textContent=money(s);$(n==="Julius"?"jCount":"rCount").textContent=tasks.filter(t=>activeFor(t,n)).length+" aktive opgaver"}renderTasks();renderHistory();renderPending()}
+function renderTasks(){let list=tasks.filter(t=>t.aktiv&&!closed(t)&&!completed(t)&&(parent()||t.tildelt_til==="begge"||t.tildelt_til===me.navn.toLowerCase()));$("taskList").innerHTML=list.length?list.map(t=>`<div class="item"><div class="row"><div><div class="title">${esc(t.titel)}</div><div class="meta">${esc(t.beskrivelse||"")}${t.beskrivelse?" · ":""}${t.gentagelse==="daglig"?"Daglig":t.gentagelse==="ugentlig"?"Ugentlig":"Én gang"}</div></div><div class="amount">${money(t.beloeb)}</div></div><div class="actions">${parent()?`<button class="light" onclick="edit('${t.id}')">Rediger</button><button class="danger" onclick="miss('${t.id}')">Ikke lavet</button>`:`<button onclick="finish('${t.id}')">Jeg har gjort det</button>`}</div></div>`).join(""):'<div class="empty">Ingen aktive opgaver lige nu ✨</div>'}
+function history(){return [...tx.map(x=>({d:x.created_at,n:person(x.barn_id),t:x.beskrivelse,a:Number(x.beloeb),k:x.type})),...events.map(x=>({d:x.created_at,n:x.barn_id?person(x.barn_id):"Begge",t:x.titel_snapshot,a:null,k:"ikke_lavet"}))].sort((a,b)=>new Date(b.d)-new Date(a.d))}
+function renderHistory(){let l=history();if(filter!=="Alle")l=l.filter(x=>x.n===filter||x.n==="Begge");$("historyList").innerHTML=l.length?l.map(x=>`<div class="item"><div class="row"><div><div class="title">${esc(x.t)}</div><div class="meta">${esc(x.n)} · ${new Date(x.d).toLocaleString("da-DK",{dateStyle:"medium",timeStyle:"short"})}${x.k==="ikke_lavet"?' · Ikke lavet':""}</div></div>${x.a===null?"":`<div class="amount ${x.a>=0?"positive":"negative"}">${x.a>=0?"+":""}${money(x.a)}</div>`}</div></div>`).join(""):'<div class="empty">Ingen historik.</div>'}
+function renderPending(){if(!parent())return;let l=done.filter(x=>x.status==="pending");$("pendingList").innerHTML=l.length?l.map(c=>{let t=tasks.find(x=>x.id===c.opgave_id);return`<div class="item"><div class="row"><div><div class="title">${esc(t?.titel||"Opgave")}</div><div class="meta">${person(c.barn_id)}</div></div><div class="amount">${money(t?.beloeb)}</div></div><div class="actions"><button class="danger" onclick="review('${c.id}',false)">Afvis</button><button onclick="review('${c.id}',true)">Godkend</button></div></div>`}).join(""):'<div class="empty">Intet venter på godkendelse.</div>'}
+window.finish=async id=>{try{await rpc("marker_udfoert",{opgave_uuid:id});await refresh()}catch(e){error(e)}};window.review=async(id,yes)=>{let p=await pin();if(!p)return;try{await rpc(yes?"godkend_opgave":"afvis_opgave",{udfoert_uuid:id,foraelder_navn:me.navn,pin:p});await refresh()}catch(e){error(e)}};window.miss=async id=>{if(!confirm('Markér som "ikke lavet"?'))return;let p=await pin();if(!p)return;try{await rpc("marker_ikke_lavet",{opgave_uuid:id,foraelder_navn:me.navn,pin:p});await refresh()}catch(e){error(e)}};
+window.edit=id=>{let t=tasks.find(x=>x.id===id);$("editId").value=id;$("editTitle").value=t.titel;$("editDesc").value=t.beskrivelse||"";$("editAmount").value=t.beloeb;$("editAssignee").value=t.tildelt_til;$("editRepeat").value=t.gentagelse;$("editDialog").showModal()};
+$("saveEdit").onclick=async e=>{e.preventDefault();let p=await pin();if(!p)return;try{await rpc("rediger_opgave",{opgave_uuid:$("editId").value,ny_titel:$("editTitle").value.trim(),ny_beskrivelse:$("editDesc").value.trim(),nyt_beloeb:Number($("editAmount").value),ny_tildeling:$("editAssignee").value,ny_gentagelse:$("editRepeat").value,foraelder_navn:me.navn,pin:p});$("editDialog").close();await refresh()}catch(e){error(e)}};
+$("loginBtn").onclick=async()=>{let{error:e}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(e)$("loginMsg").textContent=e.message;else boot()};$("logout").onclick=async()=>{await db.auth.signOut();showLogin()};
+$("createTask").onclick=async()=>{let p=await pin();if(!p)return;try{await rpc("opret_opgave",{foraelder_navn:me.navn,pin:p,titel:$("newTitle").value.trim(),beskrivelse:$("newDesc").value.trim(),beloeb:Number($("newAmount").value),tildelt_til:$("newAssignee").value,gentagelse:$("newRepeat").value});await refresh()}catch(e){error(e)}};
+$("deductBtn").onclick=async()=>{let p=await pin();if(!p)return;try{await rpc("registrer_fradrag",{barn_navn:$("deductChild").value,beloeb:Number($("deductAmount").value),type:$("deductType").value,beskrivelse:$("deductDesc").value.trim(),foraelder_navn:me.navn,pin:p});await refresh()}catch(e){error(e)}};
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));$(b.dataset.tab).classList.remove("hidden")});document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));renderHistory()});document.querySelectorAll(".balance").forEach(b=>b.onclick=()=>{filter=b.dataset.person;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x.dataset.filter===filter));document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab==="history"));document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));$("history").classList.remove("hidden");renderHistory()});if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");boot();
