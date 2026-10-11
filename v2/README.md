@@ -8,3 +8,6 @@ Bruger samme Supabase-projekt og Auth som v1.0. Frontend indeholder kun publisha
 - Robust login-handler med synlig status og fejlbesked
 - Enter i passwordfelt logger ind
 - Service-worker cache bumpet
+
+## 2.0.2
+- Rettet JavaScript syntaxfejl i login-koden, som forhindrede hele app.js i at starte.
