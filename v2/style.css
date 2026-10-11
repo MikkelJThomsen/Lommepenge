@@ -106,3 +106,37 @@ main{
   .balance small{font-size:10px}
   .avatar{width:35px;height:35px}
 }
+
+
+/* ===== 2.1 navigation revision ===== */
+.top{align-items:flex-start}
+.topProfile{
+  width:48px;height:48px;border-radius:50%;
+  padding:0;background:transparent;flex:0 0 auto;
+  margin-top:2px;
+}
+.topProfileAvatar{
+  width:48px;height:48px;border-radius:50%;
+  display:grid;place-items:center;overflow:hidden;
+  background:#ffffff28;border:2px solid #ffffff66;
+  color:white;font-size:20px;font-weight:800;
+}
+.topProfileAvatar img{width:100%;height:100%;object-fit:cover}
+.bottom.bottom3{
+  grid-template-columns:1fr 86px 1fr;
+  padding-left:28px;padding-right:28px;
+}
+.bottom.bottom3 .plus{
+  width:54px;height:54px;
+  margin:-22px auto 0;
+  font-size:31px;
+}
+.bottom.bottom3 button[data-tab]{
+  max-width:130px;
+  width:100%;
+  justify-self:center;
+}
+@media(max-width:390px){
+  .topProfile,.topProfileAvatar{width:44px;height:44px}
+  .bottom.bottom3{padding-left:18px;padding-right:18px}
+}

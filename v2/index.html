@@ -16,7 +16,10 @@
 
 <div id="app" class="hidden">
 <header>
- <div class="top"><div><div class="brand">LOMMEPENGE</div><h1>Hej, <span id="name"></span></h1></div></div>
+ <div class="top">
+   <div><div class="brand">LOMMEPENGE</div><h1>Hej, <span id="name"></span></h1></div>
+   <button id="topProfile" class="topProfile" aria-label="Åbn profil"><div id="topProfileAvatar" class="topProfileAvatar">?</div></button>
+ </div>
  <div class="balances">
   <button class="balance julius" data-person="Julius"><div id="avatarJ" class="avatar">J</div><div><b>Julius</b><strong id="saldoJ">0 kr.</strong><small id="jCount"></small></div></button>
   <button class="balance rosa" data-person="Rosa"><div id="avatarR" class="avatar">R</div><div><b>Rosa</b><strong id="saldoR">0 kr.</strong><small id="rCount"></small></div></button>
@@ -24,10 +27,7 @@
 </header>
 
 <main>
-<section id="home" class="tab">
- <div class="panel"><h2>Dine opgaver</h2><div id="homeTasks"></div></div>
-</section>
-<section id="tasks" class="tab hidden">
+<section id="tasks" class="tab">
  <div class="panel"><h2>Opgaver</h2><div id="taskList"></div></div>
 </section>
 <section id="history" class="tab hidden">
@@ -54,12 +54,10 @@
 </section>
 </main>
 
-<nav class="bottom">
- <button data-tab="home" class="active"><span>⌂</span>Hjem</button>
- <button data-tab="tasks"><span>☑</span>Opgaver</button>
+<nav class="bottom bottom3">
+ <button data-tab="tasks" class="active"><span>☑</span>Opgaver</button>
  <button id="plusBtn" class="plus" aria-label="Forælder">+</button>
  <button data-tab="history"><span>◷</span>Historik</button>
- <button data-tab="profile"><span>♙</span>Profil</button>
 </nav>
 </div>
 
