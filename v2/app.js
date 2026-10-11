@@ -1,4 +1,4 @@
-const URL="https://hnowbhfopmvroabicfro.supabase.co",KEY="sb_publishable_p06dNyqgbCai4JQ5ZSdtsg_i-YJzsaE",db=supabase.createClient(URL,KEY);
+const SUPABASE_URL="https://hnowbhfopmvroabicfro.supabase.co",SUPABASE_KEY="sb_publishable_p06dNyqgbCai4JQ5ZSdtsg_i-YJzsaE",db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let me,people=[],tasks=[],done=[],tx=[],events=[],filter="Alle";const $=x=>document.getElementById(x),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])),money=n=>new Intl.NumberFormat("da-DK",{style:"currency",currency:"DKK"}).format(Number(n||0)),person=id=>people.find(p=>p.id===id)?.navn||"",parent=()=>me?.rolle==="forælder",date=d=>new Date(d).toLocaleDateString("sv-SE",{timeZone:"Europe/Copenhagen"});
 function monday(d){let x=new Date(new Date(d).toLocaleString("en-US",{timeZone:"Europe/Copenhagen"}));x.setHours(12,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.toISOString().slice(0,10)}
 function pk(t){return t.gentagelse==="daglig"?date(new Date()):t.gentagelse==="ugentlig"?monday(new Date()):date(t.created_at)}
