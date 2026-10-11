@@ -29,7 +29,7 @@ $("loginBtn").onclick=async()=>{let m=$("loginMsg");try{m.textContent="Logger in
 $("password").onkeydown=e=>{if(e.key==="Enter")$("loginBtn").click()};$("logout").onclick=async()=>{await db.auth.signOut();showLogin()};
 $("topProfile").onclick=()=>go("profile");
 $("plusBtn").onclick=()=>{if(!parent()){alert("Kun forældre har adgang til at oprette og administrere opgaver.");return}go("parent")};
-$("createTask").onclick=async()=>{let p=await pin();if(!p)return;try{await rpc("opret_opgave",{foraelder_navn:me.navn,pin:p,titel:$("newTitle").value.trim(),beskrivelse:$("newDesc").value.trim(),beloeb:Number($("newAmount").value),tildelt_til:$("newAssignee").value,gentagelse:$("newRepeat").value,ikon:newIcon});await refresh();go("tasks")}catch(e){err(e)}};
+$("createTask").onclick=async()=>{let p=await pin();if(!p)return;try{await rpc("opret_opgave",{foraelder_navn:me.navn,pin:p,titel:$("newTitle").value.trim(),beskrivelse:$("newDesc").value.trim(),beloeb:Number($("newAmount").value),tildelt_til:$("newAssignee").value,gentagelse:$("newRepeat").value,p_ikon:newIcon});await refresh();go("tasks")}catch(e){err(e)}};
 $("deductBtn").onclick=async()=>{let p=await pin();if(!p)return;try{await rpc("registrer_fradrag",{barn_navn:$("deductChild").value,beloeb:Number($("deductAmount").value),type:$("deductType").value,beskrivelse:$("deductDesc").value.trim(),foraelder_navn:me.navn,pin:p});await refresh();go("tasks")}catch(e){err(e)}};
 document.querySelectorAll(".bottom [data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab));
 document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));renderHistory()});
