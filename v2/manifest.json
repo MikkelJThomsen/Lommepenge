@@ -1,16 +1,1 @@
-{
-  "name": "Lommepenge",
-  "short_name": "Lommepenge",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#eef3f8",
-  "theme_color": "#0b203b",
-  "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
-}
+{"name":"Lommepenge","short_name":"Lommepenge","start_url":"./","display":"standalone","background_color":"#eef4f9","theme_color":"#0b2949","icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

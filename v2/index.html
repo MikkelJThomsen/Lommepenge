@@ -1,13 +1,68 @@
-<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b203b"><title>Lommepenge 2.0</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css"></head><body>
-<main>
-<section id="login" class="login"><div class="logo">kr</div><h1>Lommepenge</h1><p>Familiens opgaver og lommepenge</p><div class="card"><h2>Log ind</h2><label>E-mail<input id="email" type="email"></label><label>Password<input id="password" type="password"></label><button id="loginBtn">Log ind</button><p id="loginMsg"></p></div></section>
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b2949">
+<title>Lommepenge</title>
+<link rel="manifest" href="./manifest.json"><link rel="stylesheet" href="./style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head><body>
+<section id="login" class="login">
+ <div class="loginCard"><div class="brand">LOMMEPENGE</div><h1>Log ind</h1>
+ <input id="email" type="email" placeholder="E-mail" autocomplete="email">
+ <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+ <button id="loginBtn">Log ind</button><div id="loginMsg" class="msg"></div></div>
+</section>
+
 <div id="app" class="hidden">
-<header><div class="top"><div><small>LOMMEPENGE</small><h1>Hej, <span id="name"></span></h1></div><button id="logout" class="logout">Log ud</button></div><div class="balances"><button class="balance blue" data-person="Julius"><span>Julius</span><b id="saldoJ">0 kr.</b><small id="jCount"></small></button><button class="balance purple" data-person="Rosa"><span>Rosa</span><b id="saldoR">0 kr.</b><small id="rCount"></small></button></div></header>
-<nav><button class="active" data-tab="tasks">Opgaver</button><button data-tab="history">Historik</button><button id="parentTab" data-tab="parent" class="hidden">Forælder</button></nav>
-<section id="tasks" class="tab card"><h2>Opgaver</h2><div id="taskList"></div></section>
-<section id="history" class="tab card hidden"><h2>Historik</h2><div class="filters"><button class="filter active" data-filter="Alle">Alle</button><button class="filter" data-filter="Julius">Julius</button><button class="filter" data-filter="Rosa">Rosa</button></div><div id="historyList"></div></section>
-<section id="parent" class="tab hidden"><div class="card"><h2>Afventer godkendelse</h2><div id="pendingList"></div></div><div class="card"><h2>Opret opgave</h2><label>Titel<input id="newTitle"></label><label>Beskrivelse<textarea id="newDesc"></textarea></label><div class="grid"><label>Beløb<input id="newAmount" type="number" min=".01" step=".5"></label><label>Tildel<select id="newAssignee"><option value="julius">Julius</option><option value="rosa">Rosa</option><option value="begge">Begge</option></select></label></div><label>Gentagelse<select id="newRepeat"><option value="engang">Én gang</option><option value="daglig">Daglig</option><option value="ugentlig">Ugentlig</option></select></label><button id="createTask">Opret opgave</button></div><div class="card"><h2>Køb / udbetaling</h2><div class="grid"><label>Barn<select id="deductChild"><option>Julius</option><option>Rosa</option></select></label><label>Type<select id="deductType"><option value="koeb">Køb</option><option value="udbetaling">Udbetaling</option></select></label></div><label>Beløb<input id="deductAmount" type="number" min=".01" step=".5"></label><label>Beskrivelse<input id="deductDesc"></label><button id="deductBtn">Registrer</button></div></section>
-</div></main>
-<dialog id="pinDialog"><form method="dialog"><h2>Forældre-PIN</h2><input id="pinInput" class="pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"><div class="actions"><button value="cancel" class="light">Annuller</button><button value="ok">Fortsæt</button></div></form></dialog>
-<dialog id="editDialog"><form method="dialog"><h2>Rediger opgave</h2><input id="editId" type="hidden"><label>Titel<input id="editTitle"></label><label>Beskrivelse<textarea id="editDesc"></textarea></label><div class="grid"><label>Beløb<input id="editAmount" type="number" min=".01" step=".5"></label><label>Tildel<select id="editAssignee"><option value="julius">Julius</option><option value="rosa">Rosa</option><option value="begge">Begge</option></select></label></div><label>Gentagelse<select id="editRepeat"><option value="engang">Én gang</option><option value="daglig">Daglig</option><option value="ugentlig">Ugentlig</option></select></label><div class="actions"><button value="cancel" class="light">Annuller</button><button id="saveEdit" value="ok">Gem</button></div></form></dialog>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="app.js"></script></body></html>
+<header>
+ <div class="top"><div><div class="brand">LOMMEPENGE</div><h1>Hej, <span id="name"></span></h1></div></div>
+ <div class="balances">
+  <button class="balance julius" data-person="Julius"><div id="avatarJ" class="avatar">J</div><div><b>Julius</b><strong id="saldoJ">0 kr.</strong><small id="jCount"></small></div></button>
+  <button class="balance rosa" data-person="Rosa"><div id="avatarR" class="avatar">R</div><div><b>Rosa</b><strong id="saldoR">0 kr.</strong><small id="rCount"></small></div></button>
+ </div>
+</header>
+
+<main>
+<section id="home" class="tab">
+ <div class="panel"><h2>Dine opgaver</h2><div id="homeTasks"></div></div>
+</section>
+<section id="tasks" class="tab hidden">
+ <div class="panel"><h2>Opgaver</h2><div id="taskList"></div></div>
+</section>
+<section id="history" class="tab hidden">
+ <div class="panel"><h2>Historik</h2><div class="filters"><button class="filter active" data-filter="Alle">Alle</button><button class="filter" data-filter="Julius">Julius</button><button class="filter" data-filter="Rosa">Rosa</button></div><div id="historyList"></div></div>
+</section>
+<section id="parent" class="tab hidden">
+ <div class="panel"><h2>Forælder</h2>
+  <h3>Ny opgave</h3>
+  <input id="newTitle" placeholder="Titel"><textarea id="newDesc" placeholder="Beskrivelse"></textarea>
+  <div class="two"><input id="newAmount" type="number" min="0" step="1" placeholder="Beløb"><select id="newAssignee"><option value="julius">Julius</option><option value="rosa">Rosa</option><option value="begge">Begge</option></select></div>
+  <select id="newRepeat"><option value="engang">Én gang</option><option value="daglig">Daglig</option><option value="ugentlig">Ugentlig</option></select>
+  <label class="label">Vælg ikon</label><div id="newIcons" class="icons"></div><button id="createTask">Opret opgave</button>
+  <hr><h3>Afventer godkendelse</h3><div id="pendingList"></div>
+  <hr><h3>Køb / udbetaling</h3><select id="deductChild"><option>Julius</option><option>Rosa</option></select>
+  <div class="two"><input id="deductAmount" type="number" min="0" step="1" placeholder="Beløb"><select id="deductType"><option value="koeb">Køb</option><option value="udbetaling">Udbetaling</option><option value="justering">Justering</option></select></div>
+  <input id="deductDesc" placeholder="Beskrivelse"><button id="deductBtn">Registrer</button>
+ </div>
+</section>
+<section id="profile" class="tab hidden">
+ <div class="panel profile"><h2>Profil</h2><div id="profileAvatar" class="profileAvatar">?</div><h3 id="profileName"></h3><div id="profileRole" class="muted"></div>
+ <label class="uploadBtn" for="profileFile">Vælg profilbillede</label><input id="profileFile" type="file" accept="image/*" hidden>
+ <div id="photoMsg" class="msg">Vælg et billede fra din telefon. Maks. 5 MB.</div>
+ <button id="logout" class="light">Log ud</button></div>
+</section>
+</main>
+
+<nav class="bottom">
+ <button data-tab="home" class="active"><span>⌂</span>Hjem</button>
+ <button data-tab="tasks"><span>☑</span>Opgaver</button>
+ <button id="plusBtn" class="plus" aria-label="Forælder">+</button>
+ <button data-tab="history"><span>◷</span>Historik</button>
+ <button data-tab="profile"><span>♙</span>Profil</button>
+</nav>
+</div>
+
+<dialog id="pinDialog"><form method="dialog"><h3>Forældre-PIN</h3><input id="pinInput" inputmode="numeric" maxlength="4" type="password"><div class="actions"><button value="cancel" class="light">Annuller</button><button value="ok">OK</button></div></form></dialog>
+<dialog id="editDialog"><form method="dialog"><h3>Rediger opgave</h3><input id="editId" type="hidden"><input id="editTitle"><textarea id="editDesc"></textarea><input id="editAmount" type="number"><select id="editAssignee"><option value="julius">Julius</option><option value="rosa">Rosa</option><option value="begge">Begge</option></select><select id="editRepeat"><option value="engang">Én gang</option><option value="daglig">Daglig</option><option value="ugentlig">Ugentlig</option></select><label class="label">Ikon</label><div id="editIcons" class="icons"></div><div class="actions"><button value="cancel" class="light">Annuller</button><button id="saveEdit" value="default">Gem</button></div></form></dialog>
+<script src="./app.js"></script></body></html>
